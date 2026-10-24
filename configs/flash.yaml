@@ -1,0 +1,54 @@
+# FLASH mmWave beam selection (Salehi et al., INFOCOM 2022) under the active-learning
+# protocol of Soltani et al., "Learning from the Best: Active Learning for Wireless
+# Communications", IEEE Wireless Commun. Mag., 2024 (arXiv:2402.04896):
+#   * 34 beam classes; label = best beam of an exhaustive search; cost = labeled samples;
+#   * shuffle the samples and hold out 10 per class (class-balanced test set);
+#   * label a random initial batch, then query a batch per iteration (sizes below);
+#   * retrain from scratch every iteration until fully trained; 5 runs with their own split.
+# Deviation: one class has only 10 samples in this release (20 in the paper), so
+# max_test_fraction keeps half of every class in the pool.
+#
+#   python -m scripts.split_pool_test   --config configs/flash.yaml
+#   python -m scripts.run_benchmark --config configs/flash.yaml
+#   python -m scripts.evaluate_learning_curves --runs runs/flash/lidar --out results/flash_lidar --targets 0.6 0.7
+
+dataset:
+  name: flash
+  root: /home/huy/ALWL/datasets/flash
+  processed: /home/huy/ALWL/datasets/flash/processed
+  K: 34
+  split_by: sample
+  split_name: paper
+  test_per_class: 10
+  max_test_fraction: 0.5
+
+al:
+  # Paper: 204 + 204 per iteration up to the whole pool (147 iterations). Here the
+  # low-budget region where strategies differ is sampled more cheaply: 5% of the pool,
+  # +5% per iteration up to 50%. Classical training on 100% comes from scripts.train_full_pool.
+  initial_fraction: 0.05
+  batch_fraction: 0.05
+  rounds: 9
+  seeds: [1, 10, 100, 1000, 10000]
+
+model:
+  modality: lidar
+  epochs: 60
+  early_stop: {patience: 5, min_delta: 0.001, min_epochs: 10}
+  lr: 1.0e-3
+  batch: 64
+  num_workers: 8
+
+benchmark:
+  modalities: [lidar, image]
+  strategies: [random, least_conf, margin, entropy, bald, coreset, badge, bait, galaxy,
+               typiclust, probcover]
+
+# Strategy hyper-parameters (defaults of the original papers unless noted in the code).
+strategies:
+  bald: {mc_samples: 20, dropout: 0.5}
+  bait: {lamb: 1.0, rank: 256, candidates: 4000, oversample: 2.0}
+  typiclust: {max_clusters: 500, knn: 20, min_cluster_size: 5, pca_dims: 64}
+  probcover: {knn: 20}
+
+run_dir: runs/flash

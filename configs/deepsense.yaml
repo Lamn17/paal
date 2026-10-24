@@ -1,0 +1,43 @@
+# DeepSense 6G scenario 33 mmWave beam selection (64 beams), run with the same protocol as
+# configs/flash.yaml: class-balanced test set of 10 samples per class, label = best beam of
+# an exhaustive search, retrain from scratch every iteration, 5% -> 50% of the pool.
+#
+#   python -m scripts.split_pool_test   --config configs/deepsense.yaml
+#   python -m scripts.run_benchmark --config configs/deepsense.yaml
+
+dataset:
+  name: deepsense
+  root: /home/huy/ALWL/datasets/deepsense/scenario33
+  processed: /home/huy/ALWL/datasets/deepsense/processed/scenario33_v2
+  K: 64
+  split_by: sample
+  split_name: paper
+  test_per_class: 10
+  max_test_fraction: 0.5
+
+al:
+  initial_fraction: 0.05
+  batch_fraction: 0.05
+  rounds: 9
+  seeds: [1, 10, 100, 1000, 10000]
+
+model:
+  modality: image
+  epochs: 60
+  early_stop: {patience: 5, min_delta: 0.001, min_epochs: 10}
+  lr: 1.0e-3
+  batch: 64
+  num_workers: 8
+
+benchmark:
+  modalities: [image, lidar]
+  strategies: [random, least_conf, margin, entropy, bald, coreset, badge, bait, galaxy,
+               typiclust, probcover]
+
+strategies:
+  bald: {mc_samples: 20, dropout: 0.5}
+  bait: {lamb: 1.0, rank: 256, candidates: 4000, oversample: 2.0}
+  typiclust: {max_clusters: 500, knn: 20, min_cluster_size: 5, pca_dims: 64}
+  probcover: {knn: 20}
+
+run_dir: runs/deepsense

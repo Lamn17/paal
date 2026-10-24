@@ -1,0 +1,17 @@
+# DeepSense 6G scenario 32: same site (location B), sensors and 64-beam codebook as scenario 33,
+# but recorded in daytime, so the camera sees the scene. Same protocol as configs/deepsense.yaml.
+#
+#   python -m scripts.voxelize_deepsense_lidar --dir <root>/unit1/lidar_data --out <root>/unit1/lidar_voxel
+#   python -m scripts.build_sample_table      --config configs/deepsense32.yaml
+#   python -m scripts.split_pool_test --config configs/deepsense32.yaml
+extends: deepsense.yaml
+
+dataset:
+  root: /home/huy/ALWL/datasets/deepsense/scenario32
+  processed: /home/huy/ALWL/datasets/deepsense/processed/scenario32
+  # Use the best-performing camera resolution found in the DeepSense-32 size trial.
+  # This is shared by every query strategy for a fair comparison.
+  image_size: [270, 480]
+
+# Keep the high-resolution comparison separate from the earlier 90x160 runs.
+run_dir: runs/deepsense32_270x480
