@@ -18,3 +18,8 @@ backups/
 .env*
 .vscode/
 .idea/
+
+# Not part of the code release
+Report_Wireless/
+docs/
+tests/
